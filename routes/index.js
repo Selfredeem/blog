@@ -6,18 +6,18 @@ const mysql = require('./../database');
 router.get('/', function(req, res, next) {
     var query = 'SELECT * FROM article ORDER BY articleID DESC';
     mysql.query(query, function(err, rows, fields){
-       var articles = rows;
-       articles.forEach(function(ele) {
-           var year = ele.articleTime.getFullYear();
-           var month = ele.articleTime.getMonth() + 1 > 10 ? ele.articleTime.getMonth() : '0' + (ele.articleTime.getMonth() + 1);
-           var date = ele.articleTime.getDate() > 10 ? ele.articleTime.getDate() : '0' + ele.articleTime.getDate();
-           ele.articleTime = year + '-' + month + '-' + date;
-       });
-       res.render("index", {articles: articles,user:req.session.user});
+        var articles = rows;
+        articles.forEach(function(ele) {
+            var year = ele.articleTime.getFullYear();
+            var month = ele.articleTime.getMonth() + 1 > 10 ? ele.articleTime.getMonth() : '0' + (ele.articleTime.getMonth() + 1);
+            var date = ele.articleTime.getDate() > 10 ? ele.articleTime.getDate() : '0' + ele.articleTime.getDate();
+            ele.articleTime = year + '-' + month + '-' + date;
+        });
+        res.render("index", {articles: articles,user:req.session.user});
     });
 });
 router.get('/login', function(req, res, next) {
-  res.render('login', {message:'',user:req.session.user});
+    res.render('login', {message:'',user:req.session.user});
 });
 router.post('/login', function(req, res, next) {
     var name = req.body.name;
@@ -41,27 +41,27 @@ router.post('/login', function(req, res, next) {
     });
 });
 router.get('/articles/:articleID', function(req, res, next) {
-   var articleID = req.params.articleID;
-   var query = 'SELECT * FROM article WHERE articleID=' + mysql.escape(articleID);
-   mysql.query(query, function(err, rows, fields) {
-      if(err) {
-          console.log(err);
-          return;
-      }
-      var query = 'UPDATE article SET articleClick=articleClick+1 WHERE articleID=' + mysql.escape(articleID);
-      var article = rows[0];
-      mysql.query(query, function(err, rows, fields) {
-         if(err) {
-             console.log(err)
-             return;
-         }
-          var year = article.articleTime.getFullYear();
-          var month = article.articleTime.getMonth() + 1 > 10 ? article.articleTime.getMonth() : '0' + (article.articleTime.getMonth() + 1);
-          var date = article.articleTime.getDate() > 10 ? article.articleTime.getDate() : '0' + article.articleTime.getDate();
-          article.articleTime = year + '-' + month + '-' + date;
-          res.render('article', {article:article,user:req.session.user});
-      });
-   });
+    var articleID = req.params.articleID;
+    var query = 'SELECT * FROM article WHERE articleID=' + mysql.escape(articleID);
+    mysql.query(query, function(err, rows, fields) {
+        if(err) {
+            console.log(err);
+            return;
+        }
+        var query = 'UPDATE article SET articleClick=articleClick+1 WHERE articleID=' + mysql.escape(articleID);
+        var article = rows[0];
+        mysql.query(query, function(err, rows, fields) {
+            if(err) {
+                console.log(err)
+                return;
+            }
+            var year = article.articleTime.getFullYear();
+            var month = article.articleTime.getMonth() + 1 > 10 ? article.articleTime.getMonth() : '0' + (article.articleTime.getMonth() + 1);
+            var date = article.articleTime.getDate() > 10 ? article.articleTime.getDate() : '0' + article.articleTime.getDate();
+            article.articleTime = year + '-' + month + '-' + date;
+            res.render('article', {article:article,user:req.session.user});
+        });
+    });
 });
 router.get('/edit', function(req, res, next) {
     var user = req.session.user;
@@ -69,7 +69,7 @@ router.get('/edit', function(req, res, next) {
         res.redirect('/login');
         return;
     }
-   res.render('edit',{user:req.session.user});
+    res.render('edit',{user:req.session.user});
 });
 router.post('/edit', function(req, res, next) {
     var title = req.body.title;
@@ -77,22 +77,22 @@ router.post('/edit', function(req, res, next) {
     var author = req.session.user.authorName;
     var query = 'INSERT article SET articleTitle=' + mysql.escape(title) + ',articleAuthor=' + mysql.escape(author) + ',articleContent=' + mysql.escape(content) + ',articleTime=CURDATE()';
     mysql.query(query, function(err, rows, fields) {
-       if(err) {
-           console.log(err);
-           return;
-       }
-       res.redirect('/');
+        if(err) {
+            console.log(err);
+            return;
+        }
+        res.redirect('/');
     });
 });
 router.get('/friends', function(req, res, next){
     res.render('friends', {user:req.session.user});
 });
 router.get('/about', function(req, res, next) {
-   res.render('about', {user:req.session.user});
+    res.render('about', {user:req.session.user});
 });
 router.get('/logout', function(req, res, next) {
-   req.session.user = null;
-   res.redirect('/');
+    req.session.user = null;
+    res.redirect('/');
 });
 router.get('/modify/:articleID', function(req, res, next) {
     var articleID = req.params.articleID;
@@ -138,49 +138,6 @@ router.get('/delete/:articleID', function(req, res, next) {
     }
     mysql.query(query, function(err, rows, fields) {
         res.redirect('/')
-    });
-});
-
-
-// routes/index.js 新增
-router.get('/register', function(req, res, next) {
-    res.render('register', {message: '', user: req.session.user});
-});
-
-router.post('/register', async function(req, res, next) {
-    var username = req.body.username;
-    var password = req.body.password;
-    var confirmPassword = req.body.confirmPassword;
-
-    // 基本验证
-    if (password !== confirmPassword) {
-        res.render('register', {message: '两次密码不一致', user: null});
-        return;
-    }
-
-    if (password.length < 6) {
-        res.render('register', {message: '密码长度至少6位', user: null});
-        return;
-    }
-
-    // 检查用户名是否已存在
-    var checkQuery = 'SELECT * FROM author WHERE authorName=' + mysql.escape(username);
-    mysql.query(checkQuery, function(err, rows) {
-        if (rows.length > 0) {
-            res.render('register', {message: '用户名已存在', user: null});
-            return;
-        }
-
-
-        var insertQuery = 'INSERT INTO author (authorName, authorPassword) VALUES (?, ?)';
-        mysql.query(insertQuery, [username, hashedPassword], function(err, result) {
-            if (err) {
-                console.log(err);
-                res.render('register', {message: '注册失败，请重试', user: null});
-                return;
-            }
-            res.redirect('/login');
-        });
     });
 });
 module.exports = router;
