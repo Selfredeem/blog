@@ -4,18 +4,81 @@ var crypto = require('crypto');
 const mysql = require('./../database');
 /* GET home page. */
 router.get('/', function(req, res, next) {
-    var query = 'SELECT * FROM article ORDER BY articleID DESC';
-    mysql.query(query, function(err, rows, fields){
-        var articles = rows;
-        articles.forEach(function(ele) {
-            var year = ele.articleTime.getFullYear();
-            var month = ele.articleTime.getMonth() + 1 > 10 ? ele.articleTime.getMonth() : '0' + (ele.articleTime.getMonth() + 1);
-            var date = ele.articleTime.getDate() > 10 ? ele.articleTime.getDate() : '0' + ele.articleTime.getDate();
-            ele.articleTime = year + '-' + month + '-' + date;
+    // 获取当前页码，默认为第1页
+    var currentPage = parseInt(req.query.page) || 1;
+    var pageSize = 5; // 每页显示5条
+
+    // 查询文章总数
+    var countQuery = 'SELECT COUNT(*) as total FROM article';
+    mysql.query(countQuery, function(err, countResult) {
+        if(err) {
+            console.log(err);
+            return res.status(500).send('数据库查询错误');
+        }
+
+        var totalArticles = countResult[0].total;
+        var totalPages = Math.ceil(totalArticles / pageSize) || 1; // 确保至少有1页
+
+        // 确保当前页码在有效范围内
+        if(currentPage < 1) currentPage = 1;
+        if(currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+
+        // 计算偏移量
+        var offset = (currentPage - 1) * pageSize;
+
+        // 查询当前页的文章
+        var query = 'SELECT * FROM article ORDER BY articleID DESC LIMIT ? OFFSET ?';
+        mysql.query(query, [pageSize, offset], function(err, rows, fields) {
+            if(err) {
+                console.log(err);
+                return res.status(500).send('数据库查询错误');
+            }
+
+            var articles = rows;
+            articles.forEach(function(ele) {
+                var year = ele.articleTime.getFullYear();
+                var month = ele.articleTime.getMonth() + 1;
+                var date = ele.articleTime.getDate();
+
+                // 格式化日期，确保两位数
+                month = month < 10 ? '0' + month : month;
+                date = date < 10 ? '0' + date : date;
+
+                ele.articleTime = year + '-' + month + '-' + date;
+            });
+
+            // 计算页码范围
+            var startPage = 1;
+            var endPage = totalPages;
+
+            if (totalPages > 5) {
+                // 总页数大于5，显示当前页附近的5页
+                if (currentPage <= 3) {
+                    startPage = 1;
+                    endPage = 5;
+                } else if (currentPage + 2 >= totalPages) {
+                    startPage = totalPages - 4;
+                    endPage = totalPages;
+                } else {
+                    startPage = currentPage - 2;
+                    endPage = currentPage + 2;
+                }
+            }
+
+            // 渲染模板，传递所有必要变量
+            res.render("index", {
+                articles: articles,
+                user: req.session.user || null,
+                currentPage: currentPage,
+                totalPages: totalPages,
+                startPage: startPage,
+                endPage: endPage,
+                totalArticles: totalArticles
+            });
         });
-        res.render("index", {articles: articles,user:req.session.user});
     });
 });
+
 router.get('/login', function(req, res, next) {
     // 如果已登录，跳转到首页
     if (req.session.user) {
