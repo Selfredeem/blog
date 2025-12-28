@@ -140,4 +140,47 @@ router.get('/delete/:articleID', function(req, res, next) {
         res.redirect('/')
     });
 });
+
+
+// routes/index.js 新增
+router.get('/register', function(req, res, next) {
+    res.render('register', {message: '', user: req.session.user});
+});
+
+router.post('/register', async function(req, res, next) {
+    var username = req.body.username;
+    var password = req.body.password;
+    var confirmPassword = req.body.confirmPassword;
+
+    // 基本验证
+    if (password !== confirmPassword) {
+        res.render('register', {message: '两次密码不一致', user: null});
+        return;
+    }
+
+    if (password.length < 6) {
+        res.render('register', {message: '密码长度至少6位', user: null});
+        return;
+    }
+
+    // 检查用户名是否已存在
+    var checkQuery = 'SELECT * FROM author WHERE authorName=' + mysql.escape(username);
+    mysql.query(checkQuery, function(err, rows) {
+        if (rows.length > 0) {
+            res.render('register', {message: '用户名已存在', user: null});
+            return;
+        }
+
+
+        var insertQuery = 'INSERT INTO author (authorName, authorPassword) VALUES (?, ?)';
+        mysql.query(insertQuery, [username, hashedPassword], function(err, result) {
+            if (err) {
+                console.log(err);
+                res.render('register', {message: '注册失败，请重试', user: null});
+                return;
+            }
+            res.redirect('/login');
+        });
+    });
+});
 module.exports = router;
