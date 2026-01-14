@@ -1,36 +1,159 @@
 <!DOCTYPE html>
 <html lang="zh-cn">
 <head>
-    <%- include("./public/head.ejs")%>
+  <%- include("./public/head.ejs")%>
 </head>
 <body>
 <%- include("./public/header.ejs")%>
 <section class="main floatfix">
   <%- include("./public/aside.ejs")%>
   <section class="main-articles">
-    <ul>
-        <% for(var  i = 0, max = articles.length; i < max; i++) {%>
-      <li class="main-articles-item">
-        <h2><a href="/articles/<%= articles[i].articleID%>"><%= articles[i].articleTitle %></a></h2>
-        <section class="main-articles-items-des">
-          <p>
-            <span>作者：<%= articles[i].articleAuthor %></span>
-            <span>发布时间：<%= articles[i].articleTime %></span>
-            <span>浏览量：<%= articles[i].articleClick %></span>
-            <% if(user) {%>
-            <span class="delete"><a href="/delete/<%= articles[i].articleID %>">删除</a></span>
-            <span class="modify"><a href="/modify/<%= articles[i].articleID %>">编辑</a></span>
-          <% } %>
-          </p>
-        </section>
-      </li>
+    <% if (!articles || articles.length === 0) { %>
+      <div class="no-articles">
+        <p>暂时没有文章</p>
+      </div>
+    <% } else { %>
+      <ul>
+        <% for(var i = 0; i < articles.length; i++) { %>
+          <li class="main-articles-item">
+            <h2><a href="/articles/<%= articles[i].articleID %>"><%= articles[i].articleTitle %></a></h2>
+            <section class="main-articles-items-des">
+              <p>
+                <span>作者：<%= articles[i].articleAuthor %></span>
+                <span>发布时间：<%= articles[i].articleTime %></span>
+                <span>浏览量：<%= articles[i].articleClick %></span>
+                <% if(user) { %>
+                  <span class="delete">
+                    <a href="/delete/<%= articles[i].articleID %>"
+                       onclick="return confirm('确定要删除这篇文章吗？删除后不可恢复！')">
+                        删除
+                    </a>
+                  </span>
+                  <span class="modify"><a href="/modify/<%= articles[i].articleID %>">编辑</a></span>
+                <% } %>
+              </p>
+            </section>
+          </li>
         <% } %>
-    </ul>
+      </ul>
+
+      <!-- 分页导航 -->
+      <% if (totalPages > 1) { %>
+        <div class="pagination">
+          <!-- 上一页 -->
+          <% if (currentPage > 1) { %>
+            <a href="/?page=<%= currentPage - 1 %>" class="page-link prev">上一页</a>
+          <% } else { %>
+            <span class="page-link prev disabled">上一页</span>
+          <% } %>
+
+          <!-- 第一页 -->
+          <% if (startPage > 1) { %>
+            <a href="/?page=1" class="page-link">1</a>
+            <% if (startPage > 2) { %>
+              <span class="page-ellipsis">...</span>
+            <% } %>
+          <% } %>
+
+          <!-- 页码 -->
+          <% for (let i = startPage; i <= endPage; i++) { %>
+            <% if (i === currentPage) { %>
+              <span class="page-link current"><%= i %></span>
+            <% } else { %>
+              <a href="/?page=<%= i %>" class="page-link"><%= i %></a>
+            <% } %>
+          <% } %>
+
+          <!-- 最后一页 -->
+          <% if (endPage < totalPages) { %>
+            <% if (endPage < totalPages - 1) { %>
+              <span class="page-ellipsis">...</span>
+            <% } %>
+            <a href="/?page=<%= totalPages %>" class="page-link"><%= totalPages %></a>
+          <% } %>
+
+          <!-- 下一页 -->
+          <% if (currentPage < totalPages) { %>
+            <a href="/?page=<%= currentPage + 1 %>" class="page-link next">下一页</a>
+          <% } else { %>
+            <span class="page-link next disabled">下一页</span>
+          <% } %>
+
+          <!-- 页码信息 -->
+          <div class="page-info">
+            第 <%= currentPage %> 页 / 共 <%= totalPages %> 页
+          </div>
+        </div>
+      <% } %>
+    <% } %>
   </section>
 </section>
 <footer>
   <p>Copyright © 2024 ZUST</p>
   <p>Powered by Express</p>
 </footer>
+
+<style>
+  .pagination {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    text-align: center;
+  }
+
+  .page-link {
+    display: inline-block;
+    padding: 6px 12px;
+    margin: 0 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #337ab7;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+
+  .page-link:hover {
+    background-color: #f5f5f5;
+    border-color: #ddd;
+  }
+
+  .page-link.current {
+    background-color: #337ab7;
+    color: white;
+    border-color: #337ab7;
+    cursor: default;
+  }
+
+  .page-link.disabled {
+    color: #777;
+    background-color: #fff;
+    border-color: #ddd;
+    cursor: not-allowed;
+  }
+
+  .page-ellipsis {
+    display: inline-block;
+    padding: 6px 12px;
+    margin: 0 4px;
+    color: #777;
+  }
+
+  .page-info {
+    margin-top: 15px;
+    color: #777;
+    font-size: 14px;
+  }
+
+  .prev, .next {
+    font-weight: bold;
+  }
+
+  .no-articles {
+    text-align: center;
+    padding: 40px;
+    color: #777;
+    font-size: 16px;
+  }
+</style>
 </body>
 </html>
